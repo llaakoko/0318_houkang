@@ -1,8 +1,11 @@
 import React from 'react'
-import {Route,Switch} from 'react-router-dom'
-import { Form, Icon, Input, Button, Checkbox } from 'antd';
+import {Redirect} from 'react-router-dom'
+import { Form, Icon, Input, Button, message } from 'antd';
 import img from './img/logo.png'
 import './login.less'
+import {reqLogin} from '../api'
+import storageUtils from '../utils/storageUtils'
+import memoryUtils from "../utils/memoryUtils";
  class Login extends React.Component{
 
 
@@ -11,9 +14,6 @@ import './login.less'
   handleSubmit = e =>{
     //阻止事件默认行为：阻止表单的提交
     e.preventDefault()
-
-
-
     //取出输入的相关数据
   //  const form = this.props.form
   //  const values = form.getFieldsValue()
@@ -23,21 +23,39 @@ import './login.less'
 
 
   //对表单所有字段进行统一验证
-  this.props.form.validateFields((err, {username,password}) => {
+  this.props.form.validateFields(async(err, {username,password}) => {
     if (!err) {
-      alert(`登录的ajax请求，username = ${username},password=${password}`)
+      // alert(`登录的ajax请求，username = ${username},password=${password}`)
+      const result = await reqLogin(username,password)
+      // try{} catch ()
+      //登录成功了
+      if (result.status===0){
+        const user = result.data
+        storageUtils.saveUser(user)
+        memoryUtils.user = user
+        // localStorage.setItem('user_key', JSON.stringify(user))
+      //跳转到管理界面
+      this.props.history.replace('/hou')
+      message.success('登陆成功')
+      }else{
+      //登录失败了
+      message.error(result.msg)
+      }
+      
     }else{
      // alert('验证失败！')
     }
   })
   }
 
+
+
 validatePwd = (rule, value, callback) =>{
    value = value.trim()
   if(!value){
     callback('武当山密码必须输入')
   }else if (value.length<4){
-    callback('武当山密码不能小于4位')
+    callback('武当山密码必须输入')
   }else if (value.length>12){
     callback('武当山密码不能大于12位')
   }else if (!/^[a-zA-Z0-9_]+$/.test(value)){
@@ -46,9 +64,13 @@ validatePwd = (rule, value, callback) =>{
     callback()//验证通过
   }
 }
-
     render(){
-
+     const user = memoryUtils.user
+      //const user = JSON.parse(localStorage.getItem('user_key') || '{}')
+      if(user._id){
+      //  this.props.history.replace('./login')
+      return <Redirect to="/hou"/>
+      } 
 
       const { getFieldDecorator } = this.props.form;
     return(
@@ -64,7 +86,7 @@ validatePwd = (rule, value, callback) =>{
         <Form.Item>
         {
           getFieldDecorator('username',{//配置对象：属性名是一些特定的名称
-            initialValue: '', //初始值
+            initialValue: '', //初始值 
             rules: [//声明式验证：使用插件已定义好的规则进行验证
               { required: true, whitespace:true, message: '武当山用户名必须'},
               {min:4,message:'武当山用户名不能小于4位'},
@@ -98,7 +120,7 @@ validatePwd = (rule, value, callback) =>{
         )
         }
         
-         
+        
         </Form.Item>
         <Form.Item>
         
@@ -115,6 +137,7 @@ validatePwd = (rule, value, callback) =>{
     )
     }
     }
+
 
 
     const WrapperForm = Form.create()(Login)

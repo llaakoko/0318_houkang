@@ -7,8 +7,12 @@ export default class App extends React.Component{
     render(){
     return(
     <div>
-        <Route path='/' component={Login}/>
+        <Switch>
         <Route path='/hou' component={admin}/>
+        <Route path='/' component={Login}/>
+      
+        </Switch>
+
     </div>
     )
     }
